@@ -14,39 +14,38 @@ impl LayerGrads {
     }
 }
 
-pub struct Layer<const I: usize, const O: usize>
-where
-    [f64; I * O]: Sized,
-{
-    weights: [f64; I * O],
+pub struct Layer {
+    inputs: usize,
+    outputs: usize,
+    weights: Vec<f64>,
     last_inputs: Vec<f64>,
 }
 
-impl<const I: usize, const O: usize> Layer<I, O>
-where
-    [f64; I * O]: Sized,
-{
-    pub fn new() -> Self {
+impl Layer {
+    pub fn new(inputs: usize, outputs: usize) -> Self {
         let mut rng = rand::thread_rng();
         const SCALE: f64 = 0.2;
+        let mut weights = vec![0.0; inputs * outputs];
+        weights.fill_with(|| SCALE * rng.gen_range(-1.0..=1.0));
         Self {
-            weights: core::array::from_fn(|_| {
-                SCALE * rng.gen_range(-1.0..=1.0)
-            }),
+            weights,
             last_inputs: Vec::new(),
+            inputs,
+            outputs,
         }
     }
 
     pub fn forward(&mut self, inputs: Vec<f64>) -> Vec<f64> {
-        let batch_size = inputs.len() / I;
-        let mut outputs = vec![0.0; batch_size * O];
+        let batch_size = inputs.len() / self.inputs;
+        let mut outputs = vec![0.0; batch_size * self.outputs];
         for b in 0..batch_size {
-            for o in 0..O {
+            for o in 0..self.outputs {
                 let mut sum = 0.0;
-                for i in 0..I {
-                    sum += inputs[b * I + i] * self.weights[O * i + o];
+                for i in 0..self.inputs {
+                    sum += inputs[b * self.inputs + i]
+                        * self.weights[self.outputs * i + o];
                 }
-                outputs[b * O + o] = sum;
+                outputs[b * self.outputs + o] = sum;
             }
         }
         self.last_inputs = inputs;
@@ -54,19 +53,21 @@ where
     }
 
     pub fn backward(&self, grads: Vec<f64>) -> LayerGrads {
-        let mut weight_grads = vec![0.0; I * O];
+        let mut weight_grads = vec![0.0; self.inputs * self.outputs];
 
-        let batch_size = self.last_inputs.len() / I;
-        let mut input_grads = vec![0.0; batch_size * I];
+        let batch_size = self.last_inputs.len() / self.inputs;
+        let mut input_grads = vec![0.0; batch_size * self.inputs];
 
         for b in 0..batch_size {
-            for i in 0..I {
-                for o in 0..O {
-                    weight_grads[i * O + o] += (grads[b * O + o]
-                        * self.last_inputs[b * I + i])
+            for i in 0..self.inputs {
+                for o in 0..self.outputs {
+                    weight_grads[i * self.outputs + o] += (grads
+                        [b * self.outputs + o]
+                        * self.last_inputs[b * self.inputs + i])
                         / batch_size as f64;
-                    input_grads[b * I + i] +=
-                        grads[b * O + o] * self.weights[i * O + o];
+                    input_grads[b * self.inputs + i] += grads
+                        [b * self.outputs + o]
+                        * self.weights[i * self.outputs + o];
                 }
             }
         }
