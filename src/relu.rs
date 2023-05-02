@@ -10,32 +10,23 @@ impl Relu {
     }
 
     pub fn forward(&mut self, inputs: Vec<f64>) -> Vec<f64> {
-        let mut outputs = vec![0.0; inputs.len()];
-        let mut i = 0;
-        while i < inputs.len() {
-            if inputs[i] < 0.0 {
-                outputs[i] = 0.01 * inputs[i];
-            } else {
-                outputs[i] = inputs[i];
-            }
-            i += 1;
-        }
         self.last_inputs = inputs;
-        outputs
+        self.last_inputs
+            .iter()
+            .map(|&i| if i < 0.0 { 0.01 * i } else { i })
+            .collect()
     }
 
     pub fn backward(&self, grads: Vec<f64>) -> Vec<f64> {
-	let mut outputs = vec![0.0; grads.len()];
-	let mut i = 0;
-	while i < self.last_inputs.len() {
-	    if self.last_inputs[i] < 0.0 {
-		// NOTE zig code says grads[i] = but that doesn't make any sense
-		outputs[i] = 0.01 * grads[i];
-	    } else {
-		outputs[i] = grads[i]
-	    }
-	    i += 1;
-	}
-	outputs
+        let mut outputs = vec![0.0; grads.len()];
+        for i in 0..self.last_inputs.len() {
+            if self.last_inputs[i] < 0.0 {
+                // NOTE zig code says grads[i] = but that doesn't make any sense
+                outputs[i] = 0.01 * grads[i];
+            } else {
+                outputs[i] = grads[i]
+            }
+        }
+        outputs
     }
 }
