@@ -1,8 +1,8 @@
 use rand::Rng;
 
 pub struct LayerGrads {
-    weight_grads: Vec<f64>,
-    input_grads: Vec<f64>,
+    pub weight_grads: Vec<f64>,
+    pub input_grads: Vec<f64>,
 }
 
 impl LayerGrads {
@@ -18,8 +18,6 @@ pub struct Layer<const I: usize, const O: usize>
 where
     [f64; I * O]: Sized,
 {
-    inputs: usize,
-    outputs: usize,
     weights: [f64; I * O],
     last_inputs: Vec<f64>,
 }
@@ -32,8 +30,6 @@ where
         let mut rng = rand::thread_rng();
         const SCALE: f64 = 0.2;
         Self {
-            inputs: I,
-            outputs: O,
             weights: core::array::from_fn(|_| {
                 SCALE * rng.gen_range(-1.0..=1.0)
             }),

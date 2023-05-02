@@ -4,10 +4,10 @@ use crate::INPUT_SIZE;
 
 #[derive(Debug)]
 pub struct Data {
-    train_images: Vec<f64>,
-    train_labels: Vec<u8>,
-    test_images: Vec<f64>,
-    test_labels: Vec<u8>,
+    pub train_images: Vec<f64>,
+    pub train_labels: Vec<u8>,
+    pub test_images: Vec<f64>,
+    pub test_labels: Vec<u8>,
 }
 
 impl Data {
@@ -42,6 +42,6 @@ impl Data {
         reader.seek(std::io::SeekFrom::Start(skip)).unwrap();
         let mut buf = Vec::new();
         reader.read_to_end(&mut buf).unwrap();
-        return buf;
+        buf
     }
 }

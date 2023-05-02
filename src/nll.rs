@@ -1,10 +1,10 @@
 pub struct Nll<const I: usize> {
-    loss: Vec<f64>,
-    input_grads: Vec<f64>,
+    pub loss: Vec<f64>,
+    pub input_grads: Vec<f64>,
 }
 
 impl<const I: usize> Nll<I> {
-    pub fn new(inputs: Vec<f64>, targets: Vec<usize>) -> Self {
+    pub fn nll(inputs: Vec<f64>, targets: Vec<u8>) -> Self {
         let batch_size = targets.len();
         let mut sum_e = vec![0.0; batch_size];
         let mut b = 0;
@@ -21,14 +21,15 @@ impl<const I: usize> Nll<I> {
 
         let mut loss = vec![0.0; batch_size];
         for b in 0..batch_size {
-            loss[b] = -1.0 * (inputs[b * I + targets[b]].exp() / sum_e[b]).ln();
+            loss[b] = -1.0
+                * (inputs[b * I + targets[b] as usize].exp() / sum_e[b]).ln();
         }
 
         let mut input_grads = vec![0.0; batch_size * I];
         for b in 0..batch_size {
             for i in 0..I {
                 input_grads[b * I + i] = inputs[b * I + i].exp() / sum_e[b];
-                if i == targets[b] {
+                if i == targets[b] as usize {
                     input_grads[b * I + i] -= 1.0;
                 }
             }
