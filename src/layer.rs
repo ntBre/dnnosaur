@@ -1,6 +1,6 @@
 use rand::Rng;
 
-struct LayerGrads {
+pub struct LayerGrads {
     weight_grads: Vec<f64>,
     input_grads: Vec<f64>,
 }

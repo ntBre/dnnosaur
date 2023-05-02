@@ -1,5 +1,8 @@
 use std::io::{Read, Seek};
 
+use crate::INPUT_SIZE;
+
+#[derive(Debug)]
 pub struct Data {
     train_images: Vec<f64>,
     train_labels: Vec<u8>,
@@ -11,7 +14,7 @@ impl Data {
     pub fn read_mnist() -> Self {
         let bytes = Self::read_idx_file("data/train-images-idx3-ubyte", 16);
         let mut train_images = Vec::new();
-        for i in 0..784 * 60_000 {
+        for i in 0..INPUT_SIZE * 60_000 {
             train_images.push(bytes[i] as f64 / 255.0);
         }
 
@@ -20,7 +23,7 @@ impl Data {
 
         let bytes = Self::read_idx_file("data/t10k-images-idx3-ubyte", 16);
         let mut test_images = Vec::new();
-        for i in 0..784 * 60_000 {
+        for i in 0..INPUT_SIZE * 10_000 {
             test_images.push(bytes[i] as f64 / 255.0);
         }
 
