@@ -63,7 +63,7 @@ where
         outputs
     }
 
-    pub fn backwards(&self, grads: Vec<f64>) -> LayerGrads {
+    pub fn backward(&self, grads: Vec<f64>) -> LayerGrads {
         let mut weight_grads = vec![0.0; I * O];
 
         let batch_size = self.last_inputs.len() / I;
