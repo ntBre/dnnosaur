@@ -1,4 +1,4 @@
-use rand::Rng;
+use rand::{rngs::StdRng, Rng, SeedableRng};
 
 pub struct LayerGrads {
     pub weight_grads: Vec<f64>,
@@ -23,8 +23,9 @@ pub struct Layer {
 
 impl Layer {
     pub fn new(inputs: usize, outputs: usize) -> Self {
-        let mut rng = rand::thread_rng();
+        const SEED: u64 = 410;
         const SCALE: f64 = 0.2;
+        let mut rng = StdRng::seed_from_u64(SEED);
         let mut weights = vec![0.0; inputs * outputs];
         weights.fill_with(|| SCALE * rng.gen_range(-1.0..=1.0));
         Self {
