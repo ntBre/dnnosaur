@@ -43,7 +43,7 @@ where
             let outputs1 = layer1.forward(inputs.to_vec());
             let outputs2 = relu1.forward(outputs1);
             let outputs3 = layer2.forward(outputs2);
-            let loss = Nll::new(T::OUTPUT_SIZE, outputs3, targets.to_vec());
+            let loss = Nll::new(T::OUTPUT_SIZE, outputs3, targets);
 
             // Update network
             let grads1 = layer2.backward(loss.input_grads);

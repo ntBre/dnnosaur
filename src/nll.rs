@@ -5,7 +5,7 @@ pub struct Nll {
 }
 
 impl Nll {
-    pub fn new(n: usize, inputs: Vec<f64>, targets: Vec<u8>) -> Self {
+    pub fn new(n: usize, inputs: Vec<f64>, targets: &[u8]) -> Self {
         let batch_size = targets.len();
         let mut sum_e = vec![0.0; batch_size];
         for b in 0..batch_size {
