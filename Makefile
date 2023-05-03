@@ -4,6 +4,9 @@ clippy:
 run:
 	cargo run --release
 
+test:
+	cargo test --release -- --nocapture
+
 build:
 	RUSTFLAGS='-g' cargo build --release
 
