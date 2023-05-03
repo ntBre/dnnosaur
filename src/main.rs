@@ -1,5 +1,5 @@
-use dnnosaur::{mnist, train};
+use dnnosaur::{mnist, Train};
 
 fn main() {
-    train(mnist::Data::read_mnist(), 25);
+    mnist::Data::read_mnist().train(25);
 }
