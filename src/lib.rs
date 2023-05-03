@@ -16,7 +16,6 @@ pub trait Train {
     const INPUT_SIZE: usize;
     const OUTPUT_SIZE: usize;
     const BATCH_SIZE: usize;
-    const EPOCHS: usize;
 
     fn train_data(&self, r: Range<usize>) -> &[f64];
     fn train_labels(&self, r: Range<usize>) -> &[u8];
@@ -24,17 +23,17 @@ pub trait Train {
     fn test_labels(&self) -> &[u8];
 }
 
-pub fn train<T>(set: T) -> Vec<f64>
+pub fn train<T>(set: T, epochs: usize) -> Vec<f64>
 where
     T: Train,
 {
-    let mut results = Vec::with_capacity(T::EPOCHS);
+    let mut results = Vec::with_capacity(epochs);
 
     let mut layer1 = Layer::new(T::INPUT_SIZE, 100);
     let mut relu1 = Relu::new();
     let mut layer2 = Layer::new(100, T::OUTPUT_SIZE);
 
-    for e in 0..T::EPOCHS {
+    for e in 0..epochs {
         // training
         for i in 0..60_000 / T::BATCH_SIZE {
             let inputs = set.train_data(

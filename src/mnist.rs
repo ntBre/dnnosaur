@@ -62,5 +62,4 @@ impl Train for Data {
     const INPUT_SIZE: usize = 784;
     const OUTPUT_SIZE: usize = 10;
     const BATCH_SIZE: usize = 32;
-    const EPOCHS: usize = 25;
 }
