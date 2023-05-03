@@ -1,6 +1,9 @@
 clippy:
 	cargo clippy --all
 
+run:
+	cargo run --release
+
 build:
 	RUSTFLAGS='-g' cargo build --release
 
