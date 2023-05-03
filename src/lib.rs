@@ -21,10 +21,12 @@ pub trait Train {
     fn test_labels(&self) -> &[u8];
 }
 
-pub fn train<T>(set: T)
+pub fn train<T>(set: T) -> Vec<f64>
 where
     T: Train,
 {
+    let mut results = Vec::with_capacity(T::EPOCHS);
+
     let mut layer1 = Layer::new(T::INPUT_SIZE, 100);
     let mut relu1 = Relu::new();
     let mut layer2 = Layer::new(100, T::OUTPUT_SIZE);
@@ -76,6 +78,11 @@ where
             }
         }
 
-        println!("{e:5} average accuracy {:.2}", correct as f64 / 100.0);
+        let res = correct as f64 / 100.0;
+        println!("{e:5} average accuracy {:.2}", res);
+
+        results.push(res);
     }
+
+    results
 }
