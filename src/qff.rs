@@ -9,7 +9,7 @@ use crate::Train;
 pub struct Qff {
     pub train_data: Vec<f64>,
     pub train_labels: Vec<f64>,
-    pub test_images: Vec<f64>,
+    pub test_data: Vec<f64>,
     pub test_labels: Vec<f64>,
 }
 
@@ -17,6 +17,21 @@ impl Qff {
     /// load a [Qff] from the file specified by `p`. This file should contain
     /// the frequencies on the first line, followed by the lxm matrix
     pub fn load(dir: impl AsRef<Path>) -> std::io::Result<Self> {
+        let (train_labels, train_data) =
+            Self::load_dir(dir.as_ref().join("train"))?;
+        let (test_labels, test_data) =
+            Self::load_dir(dir.as_ref().join("test"))?;
+        Ok(Self {
+            train_data,
+            train_labels,
+            test_data,
+            test_labels,
+        })
+    }
+
+    fn load_dir(
+        dir: impl AsRef<Path>,
+    ) -> Result<(Vec<f64>, Vec<f64>), std::io::Error> {
         let mut freqs = Vec::new();
         let mut lxm = Vec::new();
         for f in dir.as_ref().read_dir()?.flatten() {
@@ -24,12 +39,7 @@ impl Qff {
             freqs.extend(f);
             lxm.extend(l);
         }
-        Ok(Self {
-            train_data: lxm.clone(),
-            train_labels: freqs.clone(),
-            test_images: lxm,
-            test_labels: freqs,
-        })
+        Ok((freqs, lxm))
     }
 
     fn load_one(
@@ -67,7 +77,6 @@ impl Qff {
     }
 }
 
-#[allow(unused)]
 impl Train<f64> for Qff {
     /// the maximum size of the input lxm matrices
     const INPUT_SIZE: usize = 2304;
@@ -91,7 +100,7 @@ impl Train<f64> for Qff {
     }
 
     fn test_data(&self) -> &[f64] {
-        &self.test_images
+        &self.test_data
     }
 
     fn test_labels(&self) -> &[f64] {
