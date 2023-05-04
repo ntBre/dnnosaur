@@ -39,7 +39,7 @@ pub trait Train<Label> {
     fn test_labels(&self) -> &[Label];
 
     /// assess the performance of the current output of the model
-    fn check_output(&self, outputs3: Vec<f64>) -> f64;
+    fn check_output(&self, got: &[f64], want: &[Label]) -> f64;
 
     /// the loss function for the model
     fn nll(inputs: Vec<f64>, targets: &[Label]) -> NllOutput;
@@ -48,11 +48,14 @@ pub trait Train<Label> {
     fn train(&self, epochs: usize) -> Vec<f64> {
         let mut results = Vec::with_capacity(epochs);
 
-        let mut layer1 = Layer::new(Self::INPUT_SIZE, 100);
-        let mut relu1 = Relu::new();
-        let mut layer2 = Layer::new(100, Self::OUTPUT_SIZE);
+        const EDGES: usize = 100;
 
-        let mut log = File::create("train.log").unwrap();
+        let mut layer1 = Layer::new(Self::INPUT_SIZE, EDGES);
+        let mut relu1 = Relu::new();
+        let mut layer2 = Layer::new(EDGES, Self::OUTPUT_SIZE);
+
+        let mut output_log = File::create("train.log").unwrap();
+        let mut accuracy_log = File::create("accuracy.log").unwrap();
 
         for e in 0..epochs {
             // training
@@ -85,11 +88,12 @@ pub trait Train<Label> {
             let outputs2 = relu1.forward(outputs1);
             let outputs3 = layer2.forward(outputs2);
 
-            writeln!(log, "{outputs3:#?}").unwrap();
+            writeln!(output_log, "{outputs3:#?}").unwrap();
 
-            let res = self.check_output(outputs3);
+            let res = self.check_output(&outputs3, self.test_labels());
 
             println!("{e:5} average accuracy {:.2}", res);
+            writeln!(accuracy_log, "{e:5} {:8.2}", res).unwrap();
 
             results.push(res);
         }

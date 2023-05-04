@@ -1,3 +1,4 @@
 /target
 /callgrind.out
 /train.log
+/accuracy.log

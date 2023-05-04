@@ -138,11 +138,10 @@ impl Train<f64> for Qff {
     }
 
     /// return the RMSD of the outputs3 compared to the test labels
-    fn check_output(&self, outputs3: Vec<f64>) -> f64 {
-        let labels = self.test_labels();
+    fn check_output(&self, got: &[f64], want: &[f64]) -> f64 {
         let mut sum = 0.0;
         let mut c = 0;
-        for (l, o) in labels.iter().zip(outputs3) {
+        for (l, o) in want.iter().zip(got) {
             let diff = l - o;
             sum += diff * diff;
             c += 1;

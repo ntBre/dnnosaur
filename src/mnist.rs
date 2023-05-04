@@ -69,18 +69,17 @@ impl Train<u8> for Data {
         &self.test_labels
     }
 
-    fn check_output(&self, outputs3: Vec<f64>) -> f64 {
-        let labels = self.test_labels();
+    fn check_output(&self, got: &[f64], want: &[u8]) -> f64 {
         let mut correct = 0;
         for b in 0..10_000 {
-            let guess_index = outputs3
+            let guess_index = got
                 [b * Self::OUTPUT_SIZE..(b + 1) * Self::OUTPUT_SIZE]
                 .iter()
                 .enumerate()
                 .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
                 .expect("failed to find a max somehow")
                 .0;
-            if guess_index as u8 == labels[b] {
+            if guess_index as u8 == want[b] {
                 correct += 1;
             }
         }
