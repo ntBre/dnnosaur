@@ -16,21 +16,13 @@ pub struct Qff {
 impl Qff {
     /// load a [Qff] from the file specified by `p`. This file should contain
     /// the frequencies on the first line, followed by the lxm matrix
-    pub fn load(p: impl AsRef<Path>) -> std::io::Result<Self> {
-        let f = File::open(p)?;
-        let mut lines = BufReader::new(f).lines().flatten();
-        let freqs: Vec<f64> = lines
-            .next()
-            .expect("no lines found")
-            .split_ascii_whitespace()
-            .map(|s| s.parse().unwrap())
-            .collect();
-        let mut lxm: Vec<f64> = Vec::new();
-        for line in lines {
-            lxm.extend(
-                line.split_ascii_whitespace()
-                    .map(|s| s.parse::<f64>().unwrap()),
-            );
+    pub fn load(dir: impl AsRef<Path>) -> std::io::Result<Self> {
+        let mut freqs = Vec::new();
+        let mut lxm = Vec::new();
+        for f in dir.as_ref().read_dir()?.flatten() {
+            let (f, l) = Self::load_one(f.path())?;
+            freqs.extend(f);
+            lxm.extend(l);
         }
         Ok(Self {
             train_data: lxm.clone(),
@@ -39,22 +31,56 @@ impl Qff {
             test_labels: freqs,
         })
     }
+
+    fn load_one(
+        p: impl AsRef<Path>,
+    ) -> Result<(Vec<f64>, Vec<f64>), std::io::Error> {
+        let f = File::open(p)?;
+        let mut lines = BufReader::new(f).lines().flatten();
+        let mut freqs: Vec<f64> = lines
+            .next()
+            .expect("no lines found")
+            .split_ascii_whitespace()
+            .map(|s| s.parse().unwrap())
+            .collect();
+        freqs.resize_with(Self::LABEL_SIZE, || 0.0);
+        let mut lxm: Vec<f64> = Vec::new();
+        let r = (Self::INPUT_SIZE as f64).sqrt() as usize;
+        for line in lines {
+            let mut l: Vec<f64> = line
+                .split_ascii_whitespace()
+                .map(|s| s.parse::<f64>().unwrap())
+                .collect();
+            // skip blank lines
+            if l.is_empty() {
+                continue;
+            }
+            l.resize_with(r, || 0.0);
+            lxm.extend(l);
+        }
+        // already padded each row, so if there are not enough rows, add zero
+        // rows until the difference is made up. TODO do this in one resize call
+        while lxm.len() < Self::INPUT_SIZE {
+            lxm.extend(vec![0.0; r]);
+        }
+        Ok((freqs, lxm))
+    }
 }
 
 #[allow(unused)]
 impl Train<f64> for Qff {
     /// the maximum size of the input lxm matrices
-    const INPUT_SIZE: usize = 1296;
+    const INPUT_SIZE: usize = 2304;
 
     /// the maximum size of the output frequencies - 30 again for benzene
-    const LABEL_SIZE: usize = 30;
+    const LABEL_SIZE: usize = 48;
 
     /// also the maximum size of the output frequencies - 30 for benzene alone
-    const OUTPUT_SIZE: usize = 30;
+    const OUTPUT_SIZE: usize = 48;
 
     const BATCH_SIZE: usize = 1;
 
-    const DATA_SIZE: usize = 1;
+    const DATA_SIZE: usize = 2;
 
     fn train_data(&self, r: std::ops::Range<usize>) -> &[f64] {
         &self.train_data[r]
