@@ -19,16 +19,31 @@ pub trait Train<Label> {
     const OUTPUT_SIZE: usize;
     const BATCH_SIZE: usize;
 
+    /// the total size of the training set
+    const DATA_SIZE: usize;
+
     /// the length of each label value
     const LABEL_SIZE: usize;
 
+    /// returns a slice of the training data
     fn train_data(&self, r: Range<usize>) -> &[f64];
-    fn train_labels(&self, r: Range<usize>) -> &[Label];
-    fn test_data(&self) -> &[f64];
-    fn test_labels(&self) -> &[Label];
-    fn check_output(&self, outputs3: Vec<f64>) -> i32;
-    fn nll(n: usize, inputs: Vec<f64>, targets: &[Label]) -> NllOutput;
 
+    /// returns a slice of the training labels
+    fn train_labels(&self, r: Range<usize>) -> &[Label];
+
+    /// returns a reference to the validation data
+    fn test_data(&self) -> &[f64];
+
+    /// returns a reference to the validation labels
+    fn test_labels(&self) -> &[Label];
+
+    /// assess the performance of the current output of the model
+    fn check_output(&self, outputs3: Vec<f64>) -> f64;
+
+    /// the loss function for the model
+    fn nll(inputs: Vec<f64>, targets: &[Label]) -> NllOutput;
+
+    /// perform the actual training
     fn train(&self, epochs: usize) -> Vec<f64> {
         let mut results = Vec::with_capacity(epochs);
 
@@ -38,21 +53,21 @@ pub trait Train<Label> {
 
         for e in 0..epochs {
             // training
-            for i in 0..60_000 / Self::BATCH_SIZE {
+            for i in 0..Self::DATA_SIZE / Self::BATCH_SIZE {
                 let inputs = self.train_data(
                     i * Self::INPUT_SIZE * Self::BATCH_SIZE
                         ..(i + 1) * Self::INPUT_SIZE * Self::BATCH_SIZE,
                 );
                 let targets = &self.train_labels(
                     i * Self::LABEL_SIZE * Self::BATCH_SIZE
-                        ..(i + 1) * Self::BATCH_SIZE,
+                        ..(i + 1) * Self::LABEL_SIZE * Self::BATCH_SIZE,
                 );
 
                 // Go forward and get loss
                 let outputs1 = layer1.forward(inputs.to_vec());
                 let outputs2 = relu1.forward(outputs1);
                 let outputs3 = layer2.forward(outputs2);
-                let loss = Self::nll(Self::OUTPUT_SIZE, outputs3, targets);
+                let loss = Self::nll(outputs3, targets);
 
                 // Update network
                 let grads1 = layer2.backward(loss.input_grads);
@@ -67,9 +82,8 @@ pub trait Train<Label> {
             let outputs2 = relu1.forward(outputs1);
             let outputs3 = layer2.forward(outputs2);
 
-            let correct = self.check_output(outputs3);
+            let res = self.check_output(outputs3);
 
-            let res = correct as f64 / 100.0;
             println!("{e:5} average accuracy {:.2}", res);
 
             results.push(res);

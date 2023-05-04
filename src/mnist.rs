@@ -13,7 +13,7 @@ pub struct Data {
 impl Data {
     pub fn read_mnist() -> Self {
         let bytes = Self::read_idx_file("data/train-images-idx3-ubyte", 16);
-        assert_eq!(Self::INPUT_SIZE * 60_000, bytes.len());
+        assert_eq!(Self::INPUT_SIZE * Self::DATA_SIZE, bytes.len());
         let train_images = bytes.iter().map(|&b| b as f64 / 255.0).collect();
 
         let train_labels =
@@ -43,6 +43,16 @@ impl Data {
 }
 
 impl Train<u8> for Data {
+    const INPUT_SIZE: usize = 784;
+
+    const OUTPUT_SIZE: usize = 10;
+
+    const BATCH_SIZE: usize = 32;
+
+    const LABEL_SIZE: usize = 1;
+
+    const DATA_SIZE: usize = 60_000;
+
     fn train_data(&self, r: std::ops::Range<usize>) -> &[f64] {
         &self.training_data[r]
     }
@@ -59,7 +69,8 @@ impl Train<u8> for Data {
         &self.test_labels
     }
 
-    fn check_output(&self, outputs3: Vec<f64>) -> i32 {
+    fn check_output(&self, outputs3: Vec<f64>) -> f64 {
+        let labels = self.test_labels();
         let mut correct = 0;
         for b in 0..10_000 {
             let guess_index = outputs3
@@ -69,20 +80,20 @@ impl Train<u8> for Data {
                 .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
                 .expect("failed to find a max somehow")
                 .0;
-            if guess_index as u8 == self.test_labels()[b] {
+            if guess_index as u8 == labels[b] {
                 correct += 1;
             }
         }
-        correct
+        correct as f64 / 100.0
     }
 
-    fn nll(n: usize, inputs: Vec<f64>, targets: &[u8]) -> NllOutput {
+    fn nll(inputs: Vec<f64>, targets: &[u8]) -> NllOutput {
         let batch_size = targets.len();
         let mut sum_e = vec![0.0; batch_size];
         for b in 0..batch_size {
             let mut sum = 0.0;
-            for i in 0..n {
-                sum += inputs[b * n + i].exp();
+            for i in 0..Self::OUTPUT_SIZE {
+                sum += inputs[b * Self::OUTPUT_SIZE + i].exp();
             }
             sum_e[b] = sum;
         }
@@ -90,28 +101,22 @@ impl Train<u8> for Data {
         let mut loss = vec![0.0; batch_size];
         for b in 0..batch_size {
             loss[b] = -1.0
-                * (inputs[b * n + targets[b] as usize].exp() / sum_e[b]).ln();
+                * (inputs[b * Self::OUTPUT_SIZE + targets[b] as usize].exp()
+                    / sum_e[b])
+                    .ln();
         }
 
-        let mut input_grads = vec![0.0; batch_size * n];
+        let mut input_grads = vec![0.0; batch_size * Self::OUTPUT_SIZE];
         for b in 0..batch_size {
-            for i in 0..n {
-                input_grads[b * n + i] = inputs[b * n + i].exp() / sum_e[b];
+            for i in 0..Self::OUTPUT_SIZE {
+                input_grads[b * Self::OUTPUT_SIZE + i] =
+                    inputs[b * Self::OUTPUT_SIZE + i].exp() / sum_e[b];
                 if i == targets[b] as usize {
-                    input_grads[b * n + i] -= 1.0;
+                    input_grads[b * Self::OUTPUT_SIZE + i] -= 1.0;
                 }
             }
         }
 
-        NllOutput {
-            n,
-            loss,
-            input_grads,
-        }
+        NllOutput { loss, input_grads }
     }
-
-    const INPUT_SIZE: usize = 784;
-    const OUTPUT_SIZE: usize = 10;
-    const BATCH_SIZE: usize = 32;
-    const LABEL_SIZE: usize = 1;
 }
