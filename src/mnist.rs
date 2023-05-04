@@ -71,7 +71,7 @@ impl Train<u8> for Data {
 
     fn check_output(&self, got: &[f64], want: &[u8]) -> f64 {
         let mut correct = 0;
-        for b in 0..10_000 {
+        for b in 0..want.len() {
             let guess_index = got
                 [b * Self::OUTPUT_SIZE..(b + 1) * Self::OUTPUT_SIZE]
                 .iter()
