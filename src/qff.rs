@@ -51,7 +51,7 @@ impl Qff {
         let mut freqs = Vec::new();
         let mut lxm = Vec::new();
         for f in files {
-            let (f, l) = Self::load_one(dbg!(f))?;
+            let (f, l) = Self::load_one(f)?;
             freqs.extend(f);
             lxm.extend(l);
         }
@@ -125,22 +125,16 @@ impl Train<f64> for Qff {
 
     fn nll(inputs: Vec<f64>, targets: &[f64]) -> NllOutput {
         let batch_size = targets.len();
-        let mut sum_e = vec![0.0; batch_size];
+        let mut loss = vec![0.0; batch_size];
         let mut input_grads = vec![0.0; batch_size * Self::OUTPUT_SIZE];
         for b in 0..batch_size {
-            let mut sum = 0.0;
-            // sum of squared residuals
             let diff = inputs[b] - targets[b];
-            sum += diff;
+            loss[b] = diff.abs();
             // damping factor?
             input_grads[b] = diff / 1000.0;
-            sum_e[b] = sum;
         }
 
-        NllOutput {
-            loss: sum_e,
-            input_grads,
-        }
+        NllOutput { loss, input_grads }
     }
 
     /// return the RMSD of the outputs3 compared to the test labels
