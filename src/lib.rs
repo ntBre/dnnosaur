@@ -59,6 +59,7 @@ pub trait Train<Label> {
 
         for e in 0..epochs {
             // training
+            let mut pred_error = 0.0;
             for i in 0..Self::DATA_SIZE / Self::BATCH_SIZE {
                 let inputs = self.train_data(
                     i * Self::INPUT_SIZE * Self::BATCH_SIZE
@@ -73,6 +74,7 @@ pub trait Train<Label> {
                 let outputs1 = layer1.forward(inputs.to_vec());
                 let outputs2 = relu1.forward(outputs1);
                 let outputs3 = layer2.forward(outputs2);
+                pred_error += self.check_output(&outputs3, targets);
                 let loss = Self::nll(outputs3, targets);
 
                 // Update network
@@ -93,7 +95,13 @@ pub trait Train<Label> {
             let res = self.check_output(&outputs3, self.test_labels());
 
             println!("{e:5} average accuracy {:.2}", res);
-            writeln!(accuracy_log, "{e:5} {:8.2}", res).unwrap();
+            writeln!(
+                accuracy_log,
+                "{e:5} {:8.2} {:8.2}",
+                res,
+                pred_error / (Self::DATA_SIZE / Self::BATCH_SIZE) as f64
+            )
+            .unwrap();
 
             results.push(res);
         }
