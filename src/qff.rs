@@ -17,10 +17,26 @@ impl Qff {
     /// load a [Qff] from the file specified by `p`. This file should contain
     /// the frequencies on the first line, followed by the lxm matrix
     pub fn load(dir: impl AsRef<Path>) -> std::io::Result<Self> {
-        let (train_labels, train_data) =
-            Self::load_dir(dir.as_ref().join("train"))?;
-        let (test_labels, test_data) =
-            Self::load_dir(dir.as_ref().join("test"))?;
+        let train = [
+            //
+            "benzene",
+            "naphthalene",
+            "phenanthrene",
+        ];
+        let (train_labels, train_data) = Self::load_files(
+            train.iter().map(|t| dir.as_ref().join(t)).collect(),
+        )?;
+
+        let test = [
+            //
+            "benzene",
+            "naphthalene",
+            "phenanthrene",
+        ];
+        let (test_labels, test_data) = Self::load_files(
+            test.iter().map(|t| dir.as_ref().join(t)).collect(),
+        )?;
+
         Ok(Self {
             train_data,
             train_labels,
@@ -29,13 +45,13 @@ impl Qff {
         })
     }
 
-    fn load_dir(
-        dir: impl AsRef<Path>,
+    fn load_files(
+        files: Vec<impl AsRef<Path> + std::fmt::Debug>,
     ) -> Result<(Vec<f64>, Vec<f64>), std::io::Error> {
         let mut freqs = Vec::new();
         let mut lxm = Vec::new();
-        for f in dir.as_ref().read_dir()?.flatten() {
-            let (f, l) = Self::load_one(f.path())?;
+        for f in files {
+            let (f, l) = Self::load_one(dbg!(f))?;
             freqs.extend(f);
             lxm.extend(l);
         }
@@ -79,17 +95,17 @@ impl Qff {
 
 impl Train<f64> for Qff {
     /// the maximum size of the input lxm matrices
-    const INPUT_SIZE: usize = 2304;
+    const INPUT_SIZE: usize = 4356;
 
     /// the maximum size of the output frequencies - 30 again for benzene
-    const LABEL_SIZE: usize = 48;
+    const LABEL_SIZE: usize = 66;
 
     /// also the maximum size of the output frequencies - 30 for benzene alone
-    const OUTPUT_SIZE: usize = 48;
+    const OUTPUT_SIZE: usize = 66;
 
     const BATCH_SIZE: usize = 1;
 
-    const DATA_SIZE: usize = 2;
+    const DATA_SIZE: usize = 3;
 
     fn train_data(&self, r: std::ops::Range<usize>) -> &[f64] {
         &self.train_data[r]
