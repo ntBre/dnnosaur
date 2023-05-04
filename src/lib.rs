@@ -1,4 +1,5 @@
-use std::ops::Range;
+use std::io::Write;
+use std::{fs::File, ops::Range};
 
 use layer::Layer;
 use nll::NllOutput;
@@ -51,6 +52,8 @@ pub trait Train<Label> {
         let mut relu1 = Relu::new();
         let mut layer2 = Layer::new(100, Self::OUTPUT_SIZE);
 
+        let mut log = File::create("train.log").unwrap();
+
         for e in 0..epochs {
             // training
             for i in 0..Self::DATA_SIZE / Self::BATCH_SIZE {
@@ -81,6 +84,8 @@ pub trait Train<Label> {
             let outputs1 = layer1.forward(self.test_data().to_vec());
             let outputs2 = relu1.forward(outputs1);
             let outputs3 = layer2.forward(outputs2);
+
+            writeln!(log, "{outputs3:#?}").unwrap();
 
             let res = self.check_output(outputs3);
 
