@@ -34,12 +34,13 @@ impl Qff {
     /// load a [Qff] from the file specified by `p`. This file should contain
     /// the frequencies on the first line, followed by the lxm matrix
     pub fn load(&self, dir: impl AsRef<Path>) -> io::Result<Self> {
-        let train = [
-            //
-            "benzene",
-            "naphthalene",
-            "phenanthrene",
-        ];
+        // load all of the files from the pahdb
+        let data_dir = Path::new("/home/brent/data/pahdb");
+        let files: Vec<_> =
+            data_dir.read_dir()?.flatten().map(|t| t.path()).collect();
+        // use 7/10 for training and 3/10 for validation
+        let pivot = files.len() * 7 / 10;
+        let train = &files[..pivot];
         let Load {
             freqs: train_labels,
             lxm: train_data,
@@ -51,12 +52,7 @@ impl Qff {
             train.iter().map(|t| dir.as_ref().join(t)).collect(),
         )?;
 
-        let test = [
-            //
-            "benzene",
-            "naphthalene",
-            "phenanthrene",
-        ];
+        let test = &files[pivot..];
         let Load {
             freqs: test_labels,
             lxm: test_data,
