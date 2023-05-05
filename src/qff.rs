@@ -30,14 +30,29 @@ struct Load {
     count: usize,
 }
 
+fn transpose(v: Vec<Vec<f64>>) -> Vec<Vec<f64>> {
+    let mut ret = vec![vec![0.0; v.len()]; v[0].len()];
+    for i in 0..v.len() {
+        for j in 0..v[0].len() {
+            ret[j][i] = v[i][j];
+        }
+    }
+    ret
+}
+
 impl Qff {
     /// load a [Qff] from the file specified by `p`. This file should contain
     /// the frequencies on the first line, followed by the lxm matrix
     pub fn load(&self, dir: impl AsRef<Path>) -> io::Result<Self> {
+        self.load_pahdb(dir)
+    }
+
+    pub fn load_pahdb(&self, dir: impl AsRef<Path>) -> io::Result<Self> {
         // load all of the files from the pahdb
         let data_dir = Path::new("/home/brent/data/pahdb");
         let files: Vec<_> =
             data_dir.read_dir()?.flatten().map(|t| t.path()).collect();
+        let files = &files[..10];
         // use 7/10 for training and 3/10 for validation
         let pivot = files.len() * 7 / 10;
         let train = &files[..pivot];
@@ -53,6 +68,50 @@ impl Qff {
         )?;
 
         let test = &files[pivot..];
+        let Load {
+            freqs: test_labels,
+            lxm: test_data,
+            ..
+        } = Self::load_files(
+            test.iter().map(|t| dir.as_ref().join(t)).collect(),
+        )?;
+
+        Ok(Self {
+            train_data,
+            train_labels,
+            test_data,
+            test_labels,
+            input_size: max_row * max_col,
+            label_size: max_freqs,
+            output_size: max_freqs,
+            data_size: count,
+        })
+    }
+
+    pub fn load_local(&self, dir: impl AsRef<Path>) -> io::Result<Self> {
+        let train = [
+            //
+            "benzene",
+            "naphthalene",
+            "phenanthrene",
+        ];
+        let Load {
+            freqs: train_labels,
+            lxm: train_data,
+            max_freqs,
+            max_row,
+            max_col,
+            count,
+        } = Self::load_files(
+            train.iter().map(|t| dir.as_ref().join(t)).collect(),
+        )?;
+
+        let test = [
+            //
+            "benzene",
+            "naphthalene",
+            "phenanthrene",
+        ];
         let Load {
             freqs: test_labels,
             lxm: test_data,
@@ -89,7 +148,7 @@ impl Qff {
             let (or, oc) = max_lxm;
             max_lxm = (or.max(r), oc.max(c));
             freqs.push(f);
-            lxm.push(l);
+            lxm.push(transpose(l));
         }
         // TODO do the padding here, after loading all of the files and tracking
         // the max for everything. do not do the padding in `load_one`
@@ -159,7 +218,7 @@ impl Train<f64> for Qff {
     }
 
     fn batch_size(&self) -> usize {
-        1
+        2
     }
 
     fn data_size(&self) -> usize {
@@ -190,7 +249,7 @@ impl Train<f64> for Qff {
             let diff = inputs[b] - targets[b];
             loss[b] = diff.abs();
             // damping factor?
-            input_grads[b] = diff / 1000.0;
+            input_grads[b] = diff / 10.0;
         }
 
         NllOutput { loss, input_grads }
