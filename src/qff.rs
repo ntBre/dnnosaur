@@ -33,9 +33,9 @@ struct Load {
 fn transpose(v: Vec<Vec<f64>>) -> Vec<Vec<f64>> {
     let mut ret = vec![vec![0.0; v.len()]; v[0].len()];
     for i in 0..v.len() {
-        for j in 0..v[0].len() {
+        (0..v[0].len()).for_each(|j| {
             ret[j][i] = v[i][j];
-        }
+        });
     }
     ret
 }
@@ -43,11 +43,11 @@ fn transpose(v: Vec<Vec<f64>>) -> Vec<Vec<f64>> {
 impl Qff {
     /// load a [Qff] from the file specified by `p`. This file should contain
     /// the frequencies on the first line, followed by the lxm matrix
-    pub fn load(&self, dir: impl AsRef<Path>) -> io::Result<Self> {
-        self.load_pahdb(dir)
+    pub fn load(dir: impl AsRef<Path>) -> io::Result<Self> {
+        Self::load_pahdb(dir)
     }
 
-    pub fn load_pahdb(&self, dir: impl AsRef<Path>) -> io::Result<Self> {
+    pub fn load_pahdb(dir: impl AsRef<Path>) -> io::Result<Self> {
         // load all of the files from the pahdb
         let data_dir = Path::new("/home/brent/data/pahdb");
         let files: Vec<_> =
@@ -166,7 +166,7 @@ impl Qff {
         assert_eq!(count, lxm.len());
         Ok(Load {
             freqs: freqs.into_iter().flatten().collect(),
-            lxm: lxm.into_iter().flatten().flat_map(|f| f).collect(),
+            lxm: lxm.into_iter().flatten().flatten().collect(),
             max_freqs,
             max_row,
             max_col,
