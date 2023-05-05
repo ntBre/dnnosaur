@@ -52,7 +52,7 @@ impl Qff {
         let data_dir = Path::new("/home/brent/data/pahdb");
         let files: Vec<_> =
             data_dir.read_dir()?.flatten().map(|t| t.path()).collect();
-        let files = &files[..10];
+        let files = &files[..20];
         // use 7/10 for training and 3/10 for validation
         let pivot = files.len() * 7 / 10;
         let train = &files[..pivot];

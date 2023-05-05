@@ -3,7 +3,9 @@ use std::{fs::File, ops::Range};
 
 use layer::Layer;
 use nll::NllOutput;
-use relu::Relu;
+use relu::Loss;
+
+use crate::relu::leaky_relu;
 
 mod layer;
 pub mod mnist;
@@ -51,7 +53,7 @@ pub trait Train<Label> {
         const EDGES: usize = 100;
 
         let mut layer1 = Layer::new(self.input_size(), EDGES);
-        let mut relu1 = Relu::new();
+        let mut relu1 = Loss::new(leaky_relu);
         let mut layer2 = Layer::new(EDGES, self.output_size());
 
         let mut output_log = File::create("train.log").unwrap();

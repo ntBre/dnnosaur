@@ -1,10 +1,11 @@
 #![allow(unused)]
 
-pub struct Relu {
+pub struct Loss {
     last_inputs: Vec<f64>,
+    fun: fn(f64) -> f64,
 }
 
-fn leaky_relu(x: f64) -> f64 {
+pub fn leaky_relu(x: f64) -> f64 {
     if x < 0.0 {
         0.01 * x
     } else {
@@ -12,20 +13,21 @@ fn leaky_relu(x: f64) -> f64 {
     }
 }
 
-fn sigmoid(x: f64) -> f64 {
+pub fn sigmoid(x: f64) -> f64 {
     1.0 / (1.0 + (-x).exp())
 }
 
-impl Relu {
-    pub fn new() -> Self {
+impl Loss {
+    pub fn new(fun: fn(f64) -> f64) -> Self {
         Self {
+            fun,
             last_inputs: Vec::new(),
         }
     }
 
     pub fn forward(&mut self, inputs: Vec<f64>) -> Vec<f64> {
         self.last_inputs = inputs;
-        self.last_inputs.iter().map(|&i| sigmoid(i)).collect()
+        self.last_inputs.iter().map(|&i| (self.fun)(i)).collect()
     }
 
     pub fn backward(&self, grads: Vec<f64>) -> Vec<f64> {
