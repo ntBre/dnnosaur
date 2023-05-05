@@ -58,6 +58,7 @@ pub trait Train<Label> {
         let mut accuracy_log = File::create("accuracy.log").unwrap();
 
         for e in 0..epochs {
+            let now = std::time::Instant::now();
             // training
             let mut pred_error = 0.0;
             for i in 0..self.data_size() / self.batch_size() {
@@ -94,7 +95,11 @@ pub trait Train<Label> {
 
             let res = self.check_output(&outputs3, self.test_labels());
 
-            println!("{e:5} average accuracy {:.2}", res);
+            println!(
+                "{e:5} average accuracy {:.2} in {:.1} s",
+                res,
+                now.elapsed().as_millis() as f64 / 1000.0
+            );
             writeln!(
                 accuracy_log,
                 "{e:5} {:8.2} {:8.2}",
