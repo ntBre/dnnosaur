@@ -16,15 +16,15 @@ mod relu;
 mod tests;
 
 pub trait Train<Label> {
-    const INPUT_SIZE: usize;
-    const OUTPUT_SIZE: usize;
-    const BATCH_SIZE: usize;
+    fn input_size(&self) -> usize;
+    fn output_size(&self) -> usize;
+    fn batch_size(&self) -> usize;
 
     /// the total size of the training set
-    const DATA_SIZE: usize;
+    fn data_size(&self) -> usize;
 
     /// the length of each label value
-    const LABEL_SIZE: usize;
+    fn label_size(&self) -> usize;
 
     /// returns a slice of the training data
     fn train_data(&self, r: Range<usize>) -> &[f64];
@@ -42,7 +42,7 @@ pub trait Train<Label> {
     fn check_output(&self, got: &[f64], want: &[Label]) -> f64;
 
     /// the loss function for the model
-    fn nll(inputs: Vec<f64>, targets: &[Label]) -> NllOutput;
+    fn nll(&self, inputs: Vec<f64>, targets: &[Label]) -> NllOutput;
 
     /// perform the actual training
     fn train(&self, epochs: usize) -> Vec<f64> {
@@ -50,9 +50,9 @@ pub trait Train<Label> {
 
         const EDGES: usize = 100;
 
-        let mut layer1 = Layer::new(Self::INPUT_SIZE, EDGES);
+        let mut layer1 = Layer::new(self.input_size(), EDGES);
         let mut relu1 = Relu::new();
-        let mut layer2 = Layer::new(EDGES, Self::OUTPUT_SIZE);
+        let mut layer2 = Layer::new(EDGES, self.output_size());
 
         let mut output_log = File::create("train.log").unwrap();
         let mut accuracy_log = File::create("accuracy.log").unwrap();
@@ -60,14 +60,14 @@ pub trait Train<Label> {
         for e in 0..epochs {
             // training
             let mut pred_error = 0.0;
-            for i in 0..Self::DATA_SIZE / Self::BATCH_SIZE {
+            for i in 0..self.data_size() / self.batch_size() {
                 let inputs = self.train_data(
-                    i * Self::INPUT_SIZE * Self::BATCH_SIZE
-                        ..(i + 1) * Self::INPUT_SIZE * Self::BATCH_SIZE,
+                    i * self.input_size() * self.batch_size()
+                        ..(i + 1) * self.input_size() * self.batch_size(),
                 );
                 let targets = &self.train_labels(
-                    i * Self::LABEL_SIZE * Self::BATCH_SIZE
-                        ..(i + 1) * Self::LABEL_SIZE * Self::BATCH_SIZE,
+                    i * self.label_size() * self.batch_size()
+                        ..(i + 1) * self.label_size() * self.batch_size(),
                 );
 
                 // Go forward and get loss
@@ -75,7 +75,7 @@ pub trait Train<Label> {
                 let outputs2 = relu1.forward(outputs1);
                 let outputs3 = layer2.forward(outputs2);
                 pred_error += self.check_output(&outputs3, targets);
-                let loss = Self::nll(outputs3, targets);
+                let loss = self.nll(outputs3, targets);
 
                 // Update network
                 let grads1 = layer2.backward(loss.input_grads);
@@ -99,7 +99,7 @@ pub trait Train<Label> {
                 accuracy_log,
                 "{e:5} {:8.2} {:8.2}",
                 res,
-                pred_error / (Self::DATA_SIZE / Self::BATCH_SIZE) as f64
+                pred_error / (self.data_size() / self.batch_size()) as f64
             )
             .unwrap();
 

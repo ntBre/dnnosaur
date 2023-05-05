@@ -6,6 +6,7 @@ use std::path::Path;
 use crate::NllOutput;
 use crate::Train;
 
+#[derive(Default)]
 pub struct Qff {
     pub train_data: Vec<f64>,
     pub train_labels: Vec<f64>,
@@ -16,16 +17,15 @@ pub struct Qff {
 impl Qff {
     /// load a [Qff] from the file specified by `p`. This file should contain
     /// the frequencies on the first line, followed by the lxm matrix
-    pub fn load(dir: impl AsRef<Path>) -> std::io::Result<Self> {
+    pub fn load(&self, dir: impl AsRef<Path>) -> std::io::Result<Self> {
         let train = [
             //
             "benzene",
             "naphthalene",
             "phenanthrene",
         ];
-        let (train_labels, train_data) = Self::load_files(
-            train.iter().map(|t| dir.as_ref().join(t)).collect(),
-        )?;
+        let (train_labels, train_data) = self
+            .load_files(train.iter().map(|t| dir.as_ref().join(t)).collect())?;
 
         let test = [
             //
@@ -33,9 +33,8 @@ impl Qff {
             "naphthalene",
             "phenanthrene",
         ];
-        let (test_labels, test_data) = Self::load_files(
-            test.iter().map(|t| dir.as_ref().join(t)).collect(),
-        )?;
+        let (test_labels, test_data) = self
+            .load_files(test.iter().map(|t| dir.as_ref().join(t)).collect())?;
 
         Ok(Self {
             train_data,
@@ -46,12 +45,13 @@ impl Qff {
     }
 
     fn load_files(
+        &self,
         files: Vec<impl AsRef<Path> + std::fmt::Debug>,
     ) -> Result<(Vec<f64>, Vec<f64>), std::io::Error> {
         let mut freqs = Vec::new();
         let mut lxm = Vec::new();
         for f in files {
-            let (f, l) = Self::load_one(f)?;
+            let (f, l) = self.load_one(f)?;
             freqs.extend(f);
             lxm.extend(l);
         }
@@ -59,6 +59,7 @@ impl Qff {
     }
 
     fn load_one(
+        &self,
         p: impl AsRef<Path>,
     ) -> Result<(Vec<f64>, Vec<f64>), std::io::Error> {
         let f = File::open(p)?;
@@ -69,9 +70,9 @@ impl Qff {
             .split_ascii_whitespace()
             .map(|s| s.parse().unwrap())
             .collect();
-        freqs.resize_with(Self::LABEL_SIZE, || 0.0);
+        freqs.resize_with(self.label_size(), || 0.0);
         let mut lxm: Vec<f64> = Vec::new();
-        let r = (Self::INPUT_SIZE as f64).sqrt() as usize;
+        let r = (self.input_size() as f64).sqrt() as usize;
         for line in lines {
             let mut l: Vec<f64> = line
                 .split_ascii_whitespace()
@@ -86,7 +87,7 @@ impl Qff {
         }
         // already padded each row, so if there are not enough rows, add zero
         // rows until the difference is made up. TODO do this in one resize call
-        while lxm.len() < Self::INPUT_SIZE {
+        while lxm.len() < self.input_size() {
             lxm.extend(vec![0.0; r]);
         }
         Ok((freqs, lxm))
@@ -95,17 +96,27 @@ impl Qff {
 
 impl Train<f64> for Qff {
     /// the maximum size of the input lxm matrices
-    const INPUT_SIZE: usize = 4356;
+    fn input_size(&self) -> usize {
+        4356
+    }
 
     /// the maximum size of the output frequencies - 30 again for benzene
-    const LABEL_SIZE: usize = 66;
+    fn label_size(&self) -> usize {
+        66
+    }
 
     /// also the maximum size of the output frequencies - 30 for benzene alone
-    const OUTPUT_SIZE: usize = 66;
+    fn output_size(&self) -> usize {
+        66
+    }
 
-    const BATCH_SIZE: usize = 1;
+    fn batch_size(&self) -> usize {
+        1
+    }
 
-    const DATA_SIZE: usize = 3;
+    fn data_size(&self) -> usize {
+        3
+    }
 
     fn train_data(&self, r: std::ops::Range<usize>) -> &[f64] {
         &self.train_data[r]
@@ -123,10 +134,10 @@ impl Train<f64> for Qff {
         &self.test_labels
     }
 
-    fn nll(inputs: Vec<f64>, targets: &[f64]) -> NllOutput {
+    fn nll(&self, inputs: Vec<f64>, targets: &[f64]) -> NllOutput {
         let batch_size = targets.len();
         let mut loss = vec![0.0; batch_size];
-        let mut input_grads = vec![0.0; batch_size * Self::OUTPUT_SIZE];
+        let mut input_grads = vec![0.0; batch_size * self.output_size()];
         for b in 0..batch_size {
             let diff = inputs[b] - targets[b];
             loss[b] = diff.abs();
