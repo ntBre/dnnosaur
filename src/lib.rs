@@ -3,7 +3,7 @@ use std::{fs::File, ops::Range};
 
 use layer::Layer;
 use nll::NllOutput;
-use relu::Loss;
+use relu::{sigmoid, Loss};
 
 use crate::relu::leaky_relu;
 
@@ -16,6 +16,22 @@ mod relu;
 
 #[cfg(test)]
 mod tests;
+
+pub enum LossFn {
+    LeakyRelu,
+    Sigmoid,
+    Tanh,
+}
+
+impl From<LossFn> for fn(f64) -> f64 {
+    fn from(value: LossFn) -> Self {
+        match value {
+            LossFn::LeakyRelu => leaky_relu,
+            LossFn::Sigmoid => sigmoid,
+            LossFn::Tanh => f64::tanh,
+        }
+    }
+}
 
 pub trait Train<Label> {
     fn input_size(&self) -> usize;
@@ -47,13 +63,13 @@ pub trait Train<Label> {
     fn nll(&self, inputs: Vec<f64>, targets: &[Label]) -> NllOutput;
 
     /// perform the actual training
-    fn train(&self, epochs: usize) -> Vec<f64> {
+    fn train(&self, epochs: usize, loss_fn: LossFn) -> Vec<f64> {
         let mut results = Vec::with_capacity(epochs);
 
         const EDGES: usize = 100;
 
         let mut layer1 = Layer::new(self.input_size(), EDGES);
-        let mut relu1 = Loss::new(leaky_relu);
+        let mut relu1 = Loss::new(loss_fn.into());
         let mut layer2 = Layer::new(EDGES, self.output_size());
 
         let mut output_log = File::create("train.log").unwrap();
