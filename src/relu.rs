@@ -1,5 +1,19 @@
+#![allow(unused)]
+
 pub struct Relu {
     last_inputs: Vec<f64>,
+}
+
+fn leaky_relu(x: f64) -> f64 {
+    if x < 0.0 {
+        0.01 * x
+    } else {
+        x
+    }
+}
+
+fn sigmoid(x: f64) -> f64 {
+    1.0 / (1.0 + (-x).exp())
 }
 
 impl Relu {
@@ -11,10 +25,7 @@ impl Relu {
 
     pub fn forward(&mut self, inputs: Vec<f64>) -> Vec<f64> {
         self.last_inputs = inputs;
-        self.last_inputs
-            .iter()
-            .map(|&i| if i < 0.0 { 0.01 * i } else { i })
-            .collect()
+        self.last_inputs.iter().map(|&i| sigmoid(i)).collect()
     }
 
     pub fn backward(&self, grads: Vec<f64>) -> Vec<f64> {
