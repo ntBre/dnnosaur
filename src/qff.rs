@@ -49,7 +49,9 @@ impl Qff {
 
     pub fn load_pahdb(dir: impl AsRef<Path>) -> io::Result<Self> {
         // load all of the files from the pahdb
-        let data_dir = Path::new("/home/brent/data/pahdb");
+        let home = std::env::var("HOME").unwrap();
+        let home = Path::new(&home);
+        let data_dir = home.join("data/pahdb");
         let files: Vec<_> =
             data_dir.read_dir()?.flatten().map(|t| t.path()).collect();
         let files = &files[..20];
