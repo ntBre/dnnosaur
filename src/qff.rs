@@ -251,7 +251,7 @@ impl Train<f64> for Qff {
             let diff = inputs[b] - targets[b];
             loss[b] = diff.abs();
             // damping factor?
-            input_grads[b] = diff / 10.0;
+            input_grads[b] = diff / 1000.0;
         }
 
         NllOutput { loss, input_grads }
